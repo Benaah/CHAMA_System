@@ -1,0 +1,29 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_NAME=agape_youth_group
+      - DB_USER=postgres
+      - DB_PASSWORD=.PointBlank16328
+      - DB_PORT=5432
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=agape_youth_group
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=.PointBlank16328
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:

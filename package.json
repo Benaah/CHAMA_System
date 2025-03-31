@@ -1,0 +1,19 @@
+{
+  "name": "agape-youth-group-db-seed",
+  "version": "1.0.0",
+  "description": "Database seeding scripts for Agape Youth Group application",
+  "main": "seed.js",
+  "scripts": {
+    "seed": "node seed.js",
+    "seed:users": "node seed-users.js",
+    "seed:contributions": "node seed-contributions.js",
+    "seed:loans": "node seed-loans.js",
+    "seed:investments": "node seed-investments.js",
+    "seed:all": "node seed-all.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1",
+    "bcrypt": "^5.1.1"
+  }
+}

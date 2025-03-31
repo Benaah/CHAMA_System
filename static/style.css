@@ -1,0 +1,406 @@
+/* Main Styles for Agape Youth Chama */
+
+/* General Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #f7d082;
+    padding-top: 76px; /* For fixed navbar */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+}
+
+a {
+    transition: all 0.3s ease;
+}
+
+.section-title {
+    margin-bottom: 3rem;
+}
+
+.section-title h2 {
+    position: relative;
+    display: inline-block;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.section-title h2:after {
+    content: '';
+    position: absolute;
+    display: block;
+    width: 50px;
+    height: 3px;
+    background: #68a7f4;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Hero Section */
+.hero-section {
+    background: url('../images/hero-bg.jpg') no-repeat center center fixed;
+    background-size: cover;
+    background-position: center;
+    color: #d7eae2 !important;
+    padding: 100px 0;
+    margin-bottom: 80px;
+}
+
+/* Stats Section */
+.stats-container {
+    margin-top: -50px;
+    margin-bottom: 50px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 25px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    color: #007bff;
+    margin-bottom: 15px;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.stat-title {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 0;
+}
+
+/* Feature Cards */
+.feature-card {
+    background: #376a63;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    padding: 30px 25px;
+    text-align: center;
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+    width: 70px;
+    height: 70px;
+    line-height: 70px;
+    border-radius: 50%;
+    background: #7dcb80;
+    margin: 0 auto 20px;
+    font-size: 1.8rem;
+    color: #007bff;
+}
+
+.feature-card h3 {
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+}
+
+/* Program Cards */
+.program-card {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.program-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.program-card img {
+    height: 180px;
+    object-fit: cover;
+}
+
+.program-card .card-body {
+    padding: 20px;
+}
+
+.program-card h4 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+/* Announcements & Meetings Section */
+.updates-section .card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.updates-section .card-header {
+    border-bottom: none;
+    padding: 15px 20px;
+}
+
+.meeting-date {
+    background: #fdd744;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.meeting-date .month {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+
+.meeting-date .day {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* FAQ Section */
+.faq-section .card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.faq-section .card-header {
+    background-color: #4b421b;
+    border-bottom: none;
+    padding: 0;
+}
+
+.faq-section .btn-link {
+    color: #333;
+    font-weight: 600;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 15px 20px;
+}
+
+.faq-section .btn-link:hover, 
+.faq-section .btn-link:focus {
+    text-decoration: none;
+    color: #007bff;
+}
+
+.faq-section .btn-link::after {
+    content: '\f107';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    float: right;
+    transition: transform 0.3s ease;
+}
+
+.faq-section .btn-link.collapsed::after {
+    transform: rotate(-90deg);
+}
+
+.faq-section .card-body {
+    padding: 15px 20px;
+}
+
+/* Footer */
+.footer {
+    background-color: #343a40;
+}
+
+.footer h5 {
+    color: #d7eae2;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.footer ul li {
+    margin-bottom: 10px;
+}
+
+.footer a {
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+}
+
+.footer a:hover {
+    color: white;
+    text-decoration: none;
+    padding-left: 5px;
+}
+
+.social-icons a {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    text-align: center;
+    line-height: 36px;
+    margin-right: 10px;
+    transition: all 0.3s ease;
+}
+
+.social-icons a:hover {
+    background: #007bff;
+    transform: translateY(-3px);
+}
+
+/* Dashboard Styles */
+.dashboard-card {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card .card-header {
+    padding: 15px 20px;
+    border-bottom: none;
+}
+
+.dashboard-card .card-body {
+    padding: 20px;
+}
+
+.dashboard-stat {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+/* Admin Panel Styles */
+.admin-sidebar {
+    background: #343a40;
+    min-height: calc(100vh - 76px);
+    padding-top: 20px;
+}
+
+.admin-sidebar .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    padding: 10px 20px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-sidebar .nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Form Styles */
+.form-card {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.form-card .card-header {
+    padding: 15px 20px;
+    border-bottom: none;
+}
+
+.form-card .card-body {
+    padding: 30px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .dashboard-card {
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-stat {
+        font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .navbar-brand img {
+        height: 30px;
+    }
+    
+    .main-content {
+        padding-top: 70px;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-block {
+        display: block;
+        width: 100%;
+    }
+    
+    .dashboard-stat {
+        font-size: 1.2rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h4 {
+        font-size: 1.2rem;
+    }
+    
+    .navbar-brand {
+        font-size: 1rem;
+    }
+    
+    .navbar-brand img {
+        height: 25px;
+    }
+}
