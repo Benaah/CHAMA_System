@@ -243,6 +243,11 @@ try {
                                 <i class="fas fa-calculator mr-2 text-primary"></i> Budget Planner
                             </a>
                         </li>
+                        <li class="list-group-item">
+                        <a href="member_exit.php" class="btn btn-danger">
+                            <i class="fas fa-sign-out-alt mr-2"></i> Request to Leave CHAMA
+                        </a>
+                        </li>
                     </ul>
                 </div>
             </div>

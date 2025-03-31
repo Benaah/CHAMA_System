@@ -302,6 +302,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         <span>Welfare</span>
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= ($current_page == 'member_exits.php') ? 'active' : '' ?>" href="member_exits.php">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Member Exits</span>
+                    </a>
+                </li>
                 
                 <hr class="sidebar-divider">
                 
