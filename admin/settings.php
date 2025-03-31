@@ -23,17 +23,18 @@ $categories = [
 
 // Fetch current settings
 $settings = [];
-$query = "SELECT * FROM settings ORDER BY category, `key`";
-$result = mysqli_query($conn, $query);
-
-if ($result) {
-    while ($row = mysqli_fetch_assoc($result)) {
+$query = "SELECT * FROM settings ORDER BY category, key";
+try {
+    $result = $pdo->query($query);
+    while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
         $settings[$row['category']][$row['key']] = [
             'value' => $row['value'],
             'description' => $row['description'] ?? '',
             'type' => $row['type'] ?? 'text'
         ];
     }
+} catch (PDOException $e) {
+    $error = "Error fetching settings: " . $e->getMessage();
 }
 
 // Update settings
@@ -69,23 +70,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             if ($valid) {
-                // Escape the value to prevent SQL injection
-                $escaped_value = mysqli_real_escape_string($conn, $value);
-                $escaped_key = mysqli_real_escape_string($conn, $key);
-                $escaped_category = mysqli_real_escape_string($conn, $category);
-                
-                // Update the setting
-                $update_query = "UPDATE settings SET value='$escaped_value' WHERE `key`='$escaped_key' AND category='$escaped_category'";
-                if (mysqli_query($conn, $update_query)) {
-                    $updated++;
-                    
-                    // Log the change
-                    $user_id = $_SESSION['user_id'];
-                    $ip = $_SERVER['REMOTE_ADDR'];
-                    $log_action = "Updated setting: $category.$key to '$value'";
-                    mysqli_query($conn, "INSERT INTO logs (user_id, action, ip_address) VALUES ('$user_id', '$log_action', '$ip')");
-                } else {
+                try {
+                    // Update the setting using prepared statement
+                    $update_query = "UPDATE settings SET value = ? WHERE key = ? AND category = ?";
+                    $stmt = $pdo->prepare($update_query);
+                    if ($stmt->execute([$value, $key, $category])) {
+                        $updated++;
+                        
+                        // Log the change
+                        $user_id = $_SESSION['user_id'];
+                        $ip = $_SERVER['REMOTE_ADDR'];
+                        $log_action = "Updated setting: $category.$key to '$value'";
+                        
+                        $log_query = "INSERT INTO audit_logs (user_id, action, entity_type, entity_id, new_values, ip_address, created_at) 
+                                     VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)";
+                        $log_stmt = $pdo->prepare($log_query);
+                        $log_stmt->execute([
+                            $user_id, 
+                            'update', 
+                            'settings', 
+                            null, 
+                            json_encode(['key' => $key, 'value' => $value]), 
+                            $ip
+                        ]);
+                    } else {
+                        $errors++;
+                    }
+                } catch (PDOException $e) {
                     $errors++;
+                    error_log("Error updating setting: " . $e->getMessage());
                 }
             } else {
                 $errors++;
@@ -122,7 +135,7 @@ $current_category = isset($_GET['category']) && array_key_exists($_GET['category
     <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
-    <?php include_once('../includes/admin_header.php'); ?>
+    <?php include_once('header.php'); ?>
     
     <div class="container mt-4">
         <div class="row">
@@ -142,6 +155,10 @@ $current_category = isset($_GET['category']) && array_key_exists($_GET['category
                         
                         <?php if (isset($_SESSION['error'])): ?>
                             <div class="alert alert-danger"><?php echo $_SESSION['error']; unset($_SESSION['error']); ?></div>
+                        <?php endif; ?>
+                        
+                        <?php if (isset($error)): ?>
+                            <div class="alert alert-danger"><?php echo $error; ?></div>
                         <?php endif; ?>
                         
                         <div class="row">
@@ -234,6 +251,6 @@ $current_category = isset($_GET['category']) && array_key_exists($_GET['category
     }
     ?>
     
-    <?php include_once('../includes/admin_footer.php'); ?>
+    <?php include_once('footer.php'); ?>
 </body>
 </html>

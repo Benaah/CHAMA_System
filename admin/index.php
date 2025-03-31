@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 'admin') {
 $stats = [];
 
 // Total members
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE role = 'member'");
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE user_role = 'member'");
 $stats['total_members'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
 // Total contributions
@@ -28,17 +28,17 @@ $stmt = $pdo->query("SELECT SUM(amount) as total FROM loans WHERE status = 'acti
 $stats['total_loan_amount'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
 // Total savings
-$stmt = $pdo->query("SELECT SUM(amount) as total FROM savings");
+$stmt = $pdo->query("SELECT SUM(total_savings) as total FROM user_accounts");
 $stats['total_savings'] = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
 // Upcoming meetings
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM meetings WHERE meeting_date >= CURDATE()");
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM meetings WHERE date >= CURRENT_DATE");
 $stats['upcoming_meetings'] = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
 // Recent activities
 $stmt = $pdo->query("
     SELECT al.*, u.name as user_name 
-    FROM activity_logs al
+    FROM audit_logs al
     JOIN users u ON al.user_id = u.id
     ORDER BY al.created_at DESC
     LIMIT 10
@@ -48,7 +48,7 @@ $recent_activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Recent members
 $stmt = $pdo->query("
     SELECT * FROM users 
-    WHERE role = 'member'
+    WHERE user_role = 'member'
     ORDER BY created_at DESC
     LIMIT 5
 ");
@@ -66,10 +66,10 @@ $recent_contributions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Monthly contribution trends for current year
 $stmt = $pdo->query("
-    SELECT MONTH(contribution_date) as month, SUM(amount) as total
+    SELECT EXTRACT(MONTH FROM contribution_date) as month, SUM(amount) as total
     FROM contributions
-    WHERE YEAR(contribution_date) = YEAR(CURDATE())
-    GROUP BY MONTH(contribution_date)
+    WHERE EXTRACT(YEAR FROM contribution_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+    GROUP BY EXTRACT(MONTH FROM contribution_date)
     ORDER BY month
 ");
 $monthly_contributions = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -84,14 +84,7 @@ foreach ($monthly_contributions as $item) {
 }
 ?>
 
-<div class="container-fluid">
-    <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Admin Dashboard</h1>
-        <a href="reports.php" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-            <i class="fas fa-download fa-sm text-white-50"></i> Generate Report
-        </a>
-    </div>
+<di class="container-fluid">
 
     <!-- Content Row -->
     <div class="row">
@@ -162,6 +155,29 @@ foreach ($monthly_contributions as $item) {
                         <div class="col-auto">
                             <i class="fas fa-piggy-bank fa-2x text-gray-300"></i>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projects Card - NEW -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Total Projects</div>
+                        <?php
+                        // Get projects count
+                        $stmt = $pdo->query("SELECT COUNT(*) as count FROM projects");
+                        $projects_count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+                        ?>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $projects_count ?></div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-project-diagram fa-2x text-gray-300"></i>
                     </div>
                 </div>
             </div>
@@ -291,6 +307,70 @@ foreach ($monthly_contributions as $item) {
         </div>
     </div>
 
+    
+    <!-- Projects Section - NEW -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Recent Projects</h6>
+                <a href="projects.php" class="btn btn-sm btn-primary">Manage Projects</a>
+            </div>
+            <div class="card-body">
+                <?php
+                // Fetch recent projects
+                $stmt = $pdo->query("
+                    SELECT * FROM projects 
+                    ORDER BY created_at DESC
+                    LIMIT 5
+                ");
+                $recent_projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                if (count($recent_projects) > 0): 
+                ?>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($recent_projects as $project): ?>
+                                    <tr>
+                                        <td><a href="project_view.php?id=<?= $project['id'] ?>"><?= htmlspecialchars($project['name'] ?? $project['title']) ?></a></td>
+                                        <td><?= htmlspecialchars(substr($project['description'], 0, 50)) ?>...</td>
+                                        <td>
+                                            <?php if (isset($project['status'])): ?>
+                                                <?php if ($project['status'] == 'completed'): ?>
+                                                    <span class="badge badge-success">Completed</span>
+                                                <?php elseif ($project['status'] == 'in_progress' || $project['status'] == 'active'): ?>
+                                                    <span class="badge badge-primary">In Progress</span>
+                                                <?php elseif ($project['status'] == 'planned' || $project['status'] == 'planning'): ?>
+                                                    <span class="badge badge-info">Planned</span>
+                                                <?php else: ?>
+                                                    <span class="badge badge-secondary"><?= ucfirst($project['status']) ?></span>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="badge badge-secondary">Unknown</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?= date('M d, Y', strtotime($project['created_at'])) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <p class="text-center">No projects found. <a href="project_add.php">Add a new project</a>.</p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    
     <!-- Activity Timeline -->
     <div class="row">
         <div class="col-lg-12 mb-4">

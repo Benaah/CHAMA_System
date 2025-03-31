@@ -56,7 +56,7 @@ if (in_array($current_page, $restricted_pages) && !isset($_SESSION['user_id'])) 
     <style>
         /* Custom header styling */
         .navbar-custom {
-            background: linear-gradient(135deg, #1e5799 0%, #207cca 51%, #2989d8 100%);
+            background: linear-gradient(135deg, #4b421b 0%, #24252a 51%, #070716 100%);
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             padding: 0.7rem 1rem;
         }
@@ -74,7 +74,8 @@ if (in_array($current_page, $restricted_pages) && !isset($_SESSION['user_id'])) 
             padding: 0.5rem 1rem;
         }
         .nav-link:hover {
-            background-color: rgba(255,255,255,0.1);
+            background-color: #376a63;
+            text-transform: var(#d7eae2);
             transform: translateY(-2px);
         }
         .dropdown-menu {
@@ -87,14 +88,14 @@ if (in_array($current_page, $restricted_pages) && !isset($_SESSION['user_id'])) 
             transition: all 0.2s ease;
         }
         .dropdown-item:hover {
-            background-color: #f8f9fa;
+            background-color: #d3e7e8;
             transform: translateX(5px);
         }
         .dropdown-item i {
             width: 20px;
             text-align: center;
             margin-right: 8px;
-            color: #207cca;
+            color: #376a63;
         }
         .btn-auth {
             border-radius: 20px;
@@ -108,7 +109,7 @@ if (in_array($current_page, $restricted_pages) && !isset($_SESSION['user_id'])) 
         }
         .btn-register {
             background-color: white;
-            color: #207cca !important;
+            color: #bbb2ef !important;
             border: 2px solid white;
         }
         .btn-auth:hover {
@@ -139,7 +140,7 @@ if (in_array($current_page, $restricted_pages) && !isset($_SESSION['user_id'])) 
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top navbar-custom">
         <div class="container">
-            <a class="navbar-brand" href="dashboard.php">
+            <a class="navbar-brand rounded">
                 <img src="assets/images/logo.png" alt="Agape" height="40" class="mr-2">
                 Agape-Portal
             </a>

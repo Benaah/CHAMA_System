@@ -1,6 +1,6 @@
 <?php
 require_once '../config.php';
-include '../includes/header.php';
+include '../includes/resource_header.php';
 ?>
 
 <div class="container mt-5">
@@ -37,4 +37,4 @@ include '../includes/header.php';
     <p>By following these steps, you can reduce debt and achieve financial freedom!</p>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include '../includes/resource_footer.php'; ?>

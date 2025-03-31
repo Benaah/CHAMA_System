@@ -1,6 +1,6 @@
 <?php
 require_once '../config.php';
-include '../includes/header.php';
+include '../includes/resource_header.php';
 ?>
 
 <div class="container mt-5">
@@ -38,6 +38,6 @@ include '../includes/header.php';
 
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include '../includes/resource_footer.php'; ?>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>

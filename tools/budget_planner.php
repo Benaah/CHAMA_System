@@ -11,6 +11,42 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Check if the required tables exist, if not create them
+try {
+    // Check if user_budgets table exists
+    $stmt = $pdo->prepare("SELECT to_regclass('public.user_budgets')");
+    $stmt->execute();
+    $tableExists = $stmt->fetchColumn();
+    
+    if (!$tableExists) {
+        // Create user_budgets table
+        $sql = "CREATE TABLE user_budgets (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            income DECIMAL(10, 2) NOT NULL DEFAULT 0,
+            period VARCHAR(20) NOT NULL DEFAULT 'monthly',
+            savings_goal DECIMAL(10, 2) NOT NULL DEFAULT 0,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )";
+        $pdo->exec($sql);
+        
+        // Create budget_expenses table
+        $sql = "CREATE TABLE budget_expenses (
+            id SERIAL PRIMARY KEY,
+            budget_id INTEGER NOT NULL,
+            category VARCHAR(100) NOT NULL,
+            amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+            FOREIGN KEY (budget_id) REFERENCES user_budgets(id) ON DELETE CASCADE
+        )";
+        $pdo->exec($sql);
+    }
+} catch (PDOException $e) {
+    // Log the error but continue with default values
+    error_log("Error creating budget tables: " . $e->getMessage());
+}
+
 // Initialize variables
 $income = 0;
 $expenses = [];
@@ -21,24 +57,29 @@ $success_msg = '';
 $error_msg = '';
 
 // Fetch user's existing budget if available
-$stmt = $pdo->prepare("SELECT * FROM user_budgets WHERE user_id = ? ORDER BY created_at DESC LIMIT 1");
-$stmt->execute([$user_id]);
-$budget = $stmt->fetch(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare("SELECT * FROM user_budgets WHERE user_id = ? ORDER BY created_at DESC LIMIT 1");
+    $stmt->execute([$user_id]);
+    $budget = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($budget) {
-    $income = $budget['income'];
-    $budget_period = $budget['period'];
-    $savings_goal = $budget['savings_goal'];
-    
-    // Fetch budget expense items
-    $stmt = $pdo->prepare("SELECT * FROM budget_expenses WHERE budget_id = ?");
-    $stmt->execute([$budget['id']]);
-    $expense_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    foreach ($expense_items as $item) {
-        $expenses[$item['category']] = $item['amount'];
-        $total_expenses += $item['amount'];
+    if ($budget) {
+        $income = $budget['income'];
+        $budget_period = $budget['period'];
+        $savings_goal = $budget['savings_goal'];
+        
+        // Fetch budget expense items
+        $stmt = $pdo->prepare("SELECT * FROM budget_expenses WHERE budget_id = ?");
+        $stmt->execute([$budget['id']]);
+        $expense_items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($expense_items as $item) {
+            $expenses[$item['category']] = $item['amount'];
+            $total_expenses += $item['amount'];
+        }
     }
+} catch (PDOException $e) {
+    // If there's an error, just continue with default values
+    $error_msg = "Could not load existing budget data. Starting with a new budget.";
 }
 
 // Handle form submission

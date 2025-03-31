@@ -1,6 +1,6 @@
 <?php
 include '../config.php';
-include 'includes/header.php';
+include 'header.php';
 
 // Check if user is admin
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] != 'admin') {
@@ -574,4 +574,4 @@ $recent_attendance = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 </style>
 
-<?php include 'includes/footer.php'; ?>
+<?php include 'footer.php'; ?>

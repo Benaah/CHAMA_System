@@ -54,7 +54,7 @@ if ($member_filter) {
     $params[] = $member_filter;
 }
 
-$query .= " ORDER BY l.application_date DESC";
+$query .= " ORDER BY l.loan_date DESC";
 
 // Execute query
 $stmt = $pdo->prepare($query);
@@ -91,14 +91,14 @@ $stats['paid_count'] = $result['paid_count'] ?? 0;
 $stats['defaulted_count'] = $result['defaulted_count'] ?? 0;
 
 // Get members for dropdown
-$stmt = $pdo->query("SELECT id, name FROM users WHERE role = 'member' ORDER BY name");
+$stmt = $pdo->query("SELECT id, name FROM users WHERE user_role = 'member' ORDER BY name");
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="container-fluid">
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Manage Loans</h1>
+        <h1 class="h3 mb-0 text-gray-800">            </h1>
         <div>
             <a href="#" class="btn btn-success btn-sm" data-toggle="modal" data-target="#addLoanModal">
                 <i class="fas fa-plus fa-sm text-white-50"></i> Add Loan

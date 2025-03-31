@@ -1,6 +1,6 @@
 <?php
 require_once '../config.php';
-include '../includes/header.php';
+include '../includes/resorce_header.php';
 ?>
 
 <div class="container mt-5">
@@ -32,4 +32,4 @@ include '../includes/header.php';
     <p>Start budgeting today to achieve financial stability and grow your wealth!</p>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include '../includes/resorce_footer.php'; ?>

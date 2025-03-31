@@ -73,10 +73,186 @@ $recentAnnouncements = $stmt->fetchAll();
 include 'includes/header.php';
 ?>
 
+<!-- Add required CSS for animations and floating video window -->
+<style>
+    /* Animation keyframes */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(50px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes slideInLeft {
+        from { opacity: 0; transform: translateX(-50px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    /* Apply animations to elements */
+    .welcome-banner {
+        animation: fadeIn 0.8s ease-out;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #4b421b 0%, #24252a 51%, #070716 100%);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .welcome-banner:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
+    
+    .summary-card {
+        animation: fadeIn 0.8s ease-out;
+        animation-fill-mode: both;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-7px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .summary-card:nth-child(1) { animation-delay: 0.1s; }
+    .summary-card:nth-child(2) { animation-delay: 0.2s; }
+    .summary-card:nth-child(3) { animation-delay: 0.3s; }
+    .summary-card:nth-child(4) { animation-delay: 0.4s; }
+    
+    .card-left {
+        animation: slideInLeft 0.8s ease-out;
+        animation-fill-mode: both;
+        animation-delay: 0.5s;
+    }
+    
+    .card-right {
+        animation: slideInRight 0.8s ease-out;
+        animation-fill-mode: both;
+        animation-delay: 0.5s;
+    }
+    
+    .display-4 {
+        animation: pulse 2s infinite;
+    }
+    
+    /* Floating video window */
+    #floating-video-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 320px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        opacity: 0.9;
+    }
+    
+    #floating-video-container:hover {
+        opacity: 1;
+    }
+    
+    #video-header {
+        background: linear-gradient(135deg, #4b421b 0%, #24252a 51%, #070716 100%);
+        color: white;
+        padding: 10px 15px;
+        cursor: move;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    #video-content {
+        padding: 10px;
+    }
+    
+    #video-minimize {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+    }
+    
+    #video-frame {
+        width: 100%;
+        height: 180px;
+        border: none;
+    }
+    
+    .minimized {
+        width: 200px !important;
+        height: 40px !important;
+        overflow: hidden;
+    }
+    
+    /* Card hover effects */
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Table row hover animation */
+    .table-hover tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .table-hover tbody tr:hover {
+        transform: scale(1.01);
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+    
+    /* Meeting date styling */
+    .meeting-date {
+        background-color: #4e73df;
+        color: white;
+        border-radius: 5px;
+        padding: 5px 10px;
+        min-width: 60px;
+    }
+    
+    .meeting-date .month {
+        font-size: 14px;
+        font-weight: bold;
+    }
+    
+    .meeting-date .day {
+        font-size: 20px;
+        font-weight: bold;
+    }
+    
+    /* Announcement hover effect */
+    .announcement-item {
+        transition: all 0.3s ease;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    
+    .announcement-item:hover {
+        background-color: rgba(78, 115, 223, 0.05);
+    }
+</style>
+
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-12">
-            <div class="welcome-banner p-4 mb-4 bg-primary text-white rounded shadow">
+            <div class="welcome-banner p-4 mb-4 text-white rounded shadow">
                 <div class="row align-items-center">
                     <div class="col-md-8">
                         <h2>Welcome, <?php echo htmlspecialchars($user['name']); ?>!</h2>
@@ -94,7 +270,7 @@ include 'includes/header.php';
     
     <!-- Financial Summary Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-3 summary-card">
             <div class="card h-100 border-primary">
                 <div class="card-body text-center">
                     <h5 class="card-title text-primary">Total Contributions</h5>
@@ -109,7 +285,7 @@ include 'includes/header.php';
             </div>
         </div>
         
-        <div class="col-md-3">
+        <div class="col-md-3 summary-card">
             <div class="card h-100 border-danger">
                 <div class="card-body text-center">
                     <h5 class="card-title text-danger">Outstanding Loans</h5>
@@ -124,7 +300,7 @@ include 'includes/header.php';
             </div>
         </div>
         
-        <div class="col-md-3">
+        <div class="col-md-3 summary-card">
             <div class="card h-100 border-success">
                 <div class="card-body text-center">
                     <h5 class="card-title text-success">Loan Eligibility</h5>
@@ -139,7 +315,7 @@ include 'includes/header.php';
             </div>
         </div>
         
-        <div class="col-md-3">
+        <div class="col-md-3 summary-card">
             <div class="card h-100 border-info">
                 <div class="card-body text-center">
                     <h5 class="card-title text-info">Next Meeting</h5>
@@ -166,7 +342,7 @@ include 'includes/header.php';
     <div class="row">
         <!-- Recent Contributions -->
         <div class="col-md-6 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 card-left">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Recent Contributions</h5>
                 </div>
@@ -216,7 +392,7 @@ include 'includes/header.php';
         
         <!-- Active Loans -->
         <div class="col-md-6 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 card-right">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Active Loans</h5>
                 </div>
@@ -268,7 +444,7 @@ include 'includes/header.php';
     <div class="row">
         <!-- Announcements -->
         <div class="col-md-6 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 card-left">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Recent Announcements</h5>
                 </div>
@@ -295,7 +471,7 @@ include 'includes/header.php';
         
         <!-- Upcoming Meetings -->
         <div class="col-md-6 mb-4">
-            <div class="card h-100">
+            <div class="card h-100 card-right">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Upcoming Meetings</h5>
                 </div>
@@ -335,5 +511,86 @@ include 'includes/header.php';
         </div>
     </div>
 </div>
+
+<!-- Floating Video Window -->
+<div id="floating-video-container">
+    <div id="video-header">
+        <span>Video Updates</span>
+        <button id="video-minimize"><i class="fas fa-minus"></i></button>
+        <button id="video-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="video-content">
+        <iframe id="video-frame" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0" allowfullscreen></iframe>
+        <p class="mt-2 mb-0 small">Latest updates and tips for AGAPE CHAMA members</p>
+    </div>
+</div>
+
+<!-- JavaScript for the floating video window -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Make the floating video window draggable
+    const videoContainer = document.getElementById('floating-video-container');
+    const videoHeader = document.getElementById('video-header');
+    const videoMinimize = document.getElementById('video-minimize');
+    
+    let isDragging = false;
+    let offsetX, offsetY;
+    
+    // Close button functionality
+    document.getElementById('video-close').addEventListener('click', function() {
+        videoContainer.style.display = 'none';
+    });
+
+    // Toggle minimize/maximize
+    videoMinimize.addEventListener('click', function() {
+        videoContainer.classList.toggle('minimized');
+        
+        // Change the icon based on state
+        if (videoContainer.classList.contains('minimized')) {
+            videoMinimize.innerHTML = '<i class="fas fa-plus"></i>';
+        } else {
+            videoMinimize.innerHTML = '<i class="fas fa-minus"></i>';
+        }
+    });
+    
+    // Mouse down event to start dragging
+    videoHeader.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        
+        // Get the initial mouse position relative to the container
+        const rect = videoContainer.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        
+        // Prevent text selection during drag
+        e.preventDefault();
+    });
+    
+    // Mouse move event to handle dragging
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        
+        // Calculate new position
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+        
+        // Apply new position
+        videoContainer.style.left = x + 'px';
+        videoContainer.style.top = y + 'px';
+        videoContainer.style.right = 'auto';
+        videoContainer.style.bottom = 'auto';
+    });
+    
+    // Mouse up event to stop dragging
+    document.addEventListener('mouseup', function() {
+        isDragging = false;
+    });
+    
+    // Mouse leave event to stop dragging if mouse leaves the window
+    document.addEventListener('mouseleave', function() {
+        isDragging = false;
+    });
+});
+</script>
 
 <?php include 'includes/footer.php'; ?>

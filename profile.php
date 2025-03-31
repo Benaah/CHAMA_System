@@ -115,7 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
     exit();
 }
 
-// Get user statistics
+// Initialize stats with default values
 $stats = [
     'contributions' => 0,
     'loans' => 0,
@@ -124,28 +124,44 @@ $stats = [
 ];
 
 // Get total contributions
-$stmt = $pdo->prepare("SELECT SUM(amount) as total FROM contributions WHERE user_id = ?");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$stats['contributions'] = $result['total'] ?? 0;
+try {
+    $stmt = $pdo->prepare("SELECT SUM(amount) as total FROM contributions WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['contributions'] = $result['total'] ?? 0;
+} catch (PDOException $e) {
+    // If table doesn't exist, keep the default value
+}
 
 // Get active loans
-$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE user_id = ? AND status = 'active'");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$stats['loans'] = $result['count'] ?? 0;
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM loans WHERE user_id = ? AND status = 'active'");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['loans'] = $result['count'] ?? 0;
+} catch (PDOException $e) {
+    // If table doesn't exist, keep the default value
+}
 
 // Get meetings attended
-$stmt = $pdo->prepare("SELECT COUNT(*) as count FROM meeting_attendances WHERE user_id = ? AND status = 'present'");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$stats['meetings_attended'] = $result['count'] ?? 0;
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM meeting_attendances WHERE user_id = ? AND status = 'present'");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['meetings_attended'] = $result['count'] ?? 0;
+} catch (PDOException $e) {
+    // If table doesn't exist, keep the default value
+}
 
 // Get total savings
-$stmt = $pdo->prepare("SELECT SUM(amount) as total FROM savings WHERE user_id = ?");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$stats['savings'] = $result['total'] ?? 0;
+try {
+    $stmt = $pdo->prepare("SELECT SUM(amount) as total FROM savings WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stats['savings'] = $result['total'] ?? 0;
+} catch (PDOException $e) {
+    // If table doesn't exist, keep the default value
+}
 ?>
 
 <div class="container py-5 mt-4">

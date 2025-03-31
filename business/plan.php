@@ -1,6 +1,6 @@
 <?php
 require_once '../config.php';
-include '../includes/header.php';
+include '../includes/resource_header.php';
 ?>
 
 <div class="container mt-5">
@@ -24,4 +24,4 @@ include '../includes/header.php';
     <p>A well-structured business plan helps secure funding and guide business growth.</p>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include '../includes/resource_footer.php'; ?>

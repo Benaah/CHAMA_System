@@ -2,7 +2,7 @@
     </div>
     
     <!-- Footer -->
-    <footer class="footer py-5" style="background: linear-gradient(135deg, #1e5799 0%, #207cca 51%, #2989d8 100%);">
+    <footer class="footer py-5" style="background: linear-gradient(135deg, #4b421b 0%, #24252a 51%, #070716 100%);">
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-4">

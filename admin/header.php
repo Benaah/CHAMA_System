@@ -20,7 +20,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Agape Youth Group - Admin Panel</title>
+    <title>Agape Youth Group | Admin Panel</title>
     
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
@@ -41,7 +41,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <style>
         /* Admin Panel Custom Styling */
         :root {
-            --primary: #4e73df;
+            --primary: #376a63;
             --success: #1cc88a;
             --info: #36b9cc;
             --warning: #f6c23e;
@@ -52,13 +52,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
         
         body {
-            background-color: #f8f9fc;
+            background-color: #d7eae2;
             font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
         
         .sidebar {
             min-height: 100vh;
-            background: linear-gradient(180deg, var(--primary) 10%, #224abe 100%);
+            background: linear-gradient(180deg, var(--primary) 10%, #4b421b 100%);
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
             z-index: 1;
             transition: all 0.2s;
@@ -69,7 +69,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
         
         .sidebar .nav-item .nav-link {
-            color: rgba(255, 255, 255, 0.8);
+            color: #e4dcd3;
             font-weight: 700;
             padding: 0.75rem 1rem;
             display: flex;
@@ -77,12 +77,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
         
         .sidebar .nav-item .nav-link:hover {
-            color: #fff;
+            color: #f7d082;
             background-color: rgba(255, 255, 255, 0.1);
         }
         
         .sidebar .nav-item .nav-link.active {
-            color: #fff;
+            color: #f67563;
             font-weight: 700;
             background-color: rgba(255, 255, 255, 0.2);
         }
@@ -99,7 +99,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
         
         .sidebar-heading {
-            color: rgba(255, 255, 255, 0.4);
+            color: #bbb2ef;
             font-size: 0.75rem;
             font-weight: 800;
             text-transform: uppercase;
@@ -120,7 +120,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
         
         .navbar-admin .navbar-brand {
-            color: var(--dark);
+            color: #d74838;
             font-weight: 700;
         }
         

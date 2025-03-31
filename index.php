@@ -49,12 +49,12 @@ $investments = $stmt->fetchAll();
 ?>
 
 <!-- Hero Section -->
-<div class="hero-section">
+<div class="hero-section" style="background: #4b421b;">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6">
-                <h1 class="display-4 text-black">Welcome to Agape Youth Group!</h1>
-                <p class="lead text-blue">Empowering young people through financial growth, unity, and sustainable development.</p>
+                <h1 class="display-4 text-white">Welcome to Agape Youth Group!</h1>
+                <p class="lead text-white">Empowering young people through financial growth, unity, and sustainable development.</p>
                 <div class="mt-4">
                     <?php if(!isset($_SESSION['user_id'])): ?>
                         <a href="login.php" class="btn btn-primary btn-lg mr-3">Login</a>
@@ -70,27 +70,25 @@ $investments = $stmt->fetchAll();
             </div>
         </div>
     </div>
-</div>
-
-<!-- Floating Stats Section -->
-<div class="container stats-container">
-    <div class="row">
-        <div class="col-md-4">
-            <div class="stat-card" data-aos="fade-up">
-                <div class="stat-icon"><i class="fas fa-users"></i></div>
-                <h3 class="stat-number"><?php echo number_format($memberCount); ?></h3>
-                <p class="stat-title">Active Members</p>
+    <!-- Floating Stats Section -->
+    <div class="container stats-container">
+        <div class="row" >
+            <div class="col-md-4">
+                <div class="stat-card text-white" data-aos="fade-up">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <h3 class="stat-number"><?php echo number_format($memberCount); ?></h3>
+                    <p class="stat-title">Active Members</p>
+                </div>
             </div>
-        </div>
         <div class="col-md-4">
-            <div class="stat-card" data-aos="fade-up" data-aos-delay="100">
+            <div class="stat-card text-white" data-aos="fade-up" data-aos-delay="100">
                 <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
                 <h3 class="stat-number">KSh <?php echo number_format($totalSavings); ?></h3>
                 <p class="stat-title">Total Savings</p>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-card text-white" data-aos="fade-up" data-aos-delay="200">
                 <div class="stat-icon"><i class="fas fa-project-diagram"></i></div>
                 <h3 class="stat-number"><?php echo number_format($projectsCount); ?></h3>
                 <p class="stat-title">Funded Projects</p>
@@ -99,19 +97,19 @@ $investments = $stmt->fetchAll();
     </div>
 </div>
 <!-- Announcements Section -->
-<section class="announcements-section py-5 bg-light">
+<section class="announcements-section py-5" style="background: #27273a;">
     <div class="container">
         <div class="section-header text-center mb-5">
             <h2 class="display-5 fw-bold text-primary">Latest Announcements</h2>
             <div class="divider mx-auto"></div>
         </div>
         
-        <div class="row">
+        <div class="row" >
             <?php if(count($announcements) > 0): ?>
                 <?php foreach($announcements as $index => $announcement): ?>
                     <div class="col-lg-4 mb-4" data-aos="fade-up" data-aos-delay="<?php echo $index * 100; ?>">
                         <div class="card h-100 announcement-card shadow-sm border-0">
-                            <div class="card-body">
+                            <div class="card-body" style="background: #7dcbb0;">
                                 <div class="announcement-date mb-2">
                                     <span class="badge bg-primary"><?php echo date('M d, Y', strtotime($announcement['created_at'])); ?></span>
                                 </div>
@@ -137,50 +135,8 @@ $investments = $stmt->fetchAll();
     </div>
 </section>
 
-<!-- Upcoming Meetings Section -->
-<section class="meetings-section py-5">
-    <div class="container">
-        <div class="section-header text-center mb-5">
-            <h2 class="display-5 fw-bold text-primary">Upcoming Meetings</h2>
-            <div class="divider mx-auto"></div>
-        </div>
-        
-        <div class="row">
-            <?php if(count($meetings) > 0): ?>
-                <?php foreach($meetings as $index => $meeting): ?>
-                    <div class="col-lg-6 mb-4" data-aos="zoom-in" data-aos-delay="<?php echo $index * 150; ?>">
-                        <div class="meeting-card shadow-sm rounded p-4 position-relative overflow-hidden">
-                            <div class="meeting-date-badge">
-                                <span class="date"><?php echo date('d', strtotime($meeting['date'])); ?></span>
-                                <span class="month"><?php echo date('M', strtotime($meeting['date'])); ?></span>
-                            </div>
-                            <h4><?php echo htmlspecialchars($meeting['title']); ?></h4>
-                            <p class="text-muted mb-2">
-                                <i class="fas fa-clock mr-2"></i> <?php echo date('h:i A', strtotime($meeting['time'])); ?>
-                            </p>
-                            <p class="text-muted mb-3">
-                                <i class="fas fa-map-marker-alt mr-2"></i> <?php echo htmlspecialchars($meeting['location']); ?>
-                            </p>
-                            <p><?php echo nl2br(htmlspecialchars(substr($meeting['description'], 0, 120))); ?>...</p>
-                            <a href="meeting.php?id=<?php echo $meeting['id']; ?>" class="btn btn-sm btn-primary">View Details</a>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="col-12 text-center">
-                    <p>No upcoming meetings scheduled at the moment.</p>
-                </div>
-            <?php endif; ?>
-        </div>
-        
-        <div class="text-center mt-4">
-            <a href="meetings.php" class="btn btn-outline-primary">View All Meetings</a>
-        </div>
-    </div>
-</section>
-
 <!-- Services Section -->
-<section class="services-section py-5 bg-light">
+<section class="services-section py-5" style="background: #7dcbb0;">
     <div class="container">
         <div class="section-header text-center mb-5">
             <h2 class="display-5 fw-bold text-primary">Our Services</h2>
@@ -226,7 +182,7 @@ $investments = $stmt->fetchAll();
 </section>
 
 <!-- Latest Projects Section -->
-<section class="projects-section py-5">
+<section class="projects-section py-5" style="background: #7dcbb0;">
     <div class="container">
         <div class="section-header text-center mb-5">
             <h2 class="display-5 fw-bold text-primary">Our Latest Projects</h2>
@@ -260,8 +216,8 @@ $investments = $stmt->fetchAll();
                                     </div>
                                 </div>
                                 <p class="card-text">
-                                    <span class="text-muted">Raised: </span>KSh <?php echo number_format($project['current_amount']); ?> 
-                                    <span class="text-muted">of KSh <?php echo number_format($project['target_amount']); ?></span>
+                                    <span class="text-muted">Raised: </span>KSh <?php echo number_format($project['current_investment'] ?? 0); ?> 
+                                    <span class="text-muted">of KSh <?php echo number_format($project['target_amount'] ?? 0); ?></span>
                                 </p>
                                 <p class="card-text"><?php echo nl2br(htmlspecialchars(substr($project['description'], 0, 100))); ?>...</p>
                             </div>
@@ -282,7 +238,7 @@ $investments = $stmt->fetchAll();
 </section>
 
 <!-- Testimonials Section -->
-<section class="testimonials-section py-5 bg-light">
+<section class="testimonials-section py-5" style="background: linear-gradient(135deg, #4b421b 0%, #24252a 51%, #070716 100%)">
     <div class="container">
         <div class="section-header text-center mb-5">
             <h2 class="display-5 fw-bold text-primary">Member Testimonials</h2>
@@ -292,7 +248,7 @@ $investments = $stmt->fetchAll();
         <div class="testimonial-slider">
             <div class="row">
                 <div class="col-md-4 mb-4" data-aos="fade-up">
-                    <div class="testimonial-card p-4 bg-white shadow-sm rounded h-100">
+                    <div class="testimonial-card p-4 bg-white shadow-sm squared h-100">
                         <div class="testimonial-content">
                             <p class="mb-4"><i class="fas fa-quote-left text-primary mr-2"></i> Joining Agape Youth Group was one of the best decisions I've made. The financial literacy I've gained and the support from fellow members has been invaluable.</p>
                         </div>
@@ -309,7 +265,7 @@ $investments = $stmt->fetchAll();
                 </div>
                 
                 <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="testimonial-card p-4 bg-white shadow-sm rounded h-100">
+                    <div class="testimonial-card p-4 bg-white shadow-sm squared h-100">
                         <div class="testimonial-content">
                             <p class="mb-4"><i class="fas fa-quote-left text-primary mr-2"></i> The loan I received helped me start my small business. The process was straightforward and the interest rates are fair. I'm grateful for this opportunity.</p>
                         </div>
@@ -326,7 +282,7 @@ $investments = $stmt->fetchAll();
                 </div>
                 
                 <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
-                    <div class="testimonial-card p-4 bg-white shadow-sm rounded h-100">
+                    <div class="testimonial-card p-4 bg-white shadow-sm squared h-100">
                         <div class="testimonial-content">
                             <p class="mb-4"><i class="fas fa-quote-left text-primary mr-2"></i> The investment opportunities provided by Agape have helped me grow my savings significantly. The transparency and accountability in management is commendable.</p>
                         </div>
@@ -344,10 +300,8 @@ $investments = $stmt->fetchAll();
             </div>
         </div>
     </div>
-</section>
-
-<!-- Call to Action Section -->
-<section class="cta-section py-5 bg-primary text-white">
+    <!-- Call to Action Section -->
+    <div class="cta-section py-5 text-white">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-8 mb-4 mb-lg-0">
@@ -366,7 +320,7 @@ $investments = $stmt->fetchAll();
 </section>
 
 <!-- Latest News Section -->
-<section class="news-section py-5">
+<section class="news-section py-5" style="background: #f7d082;">
     <div class="container">
         <div class="section-header text-center mb-5">
             <h2 class="display-5 fw-bold text-primary">Latest News & Resources</h2>
@@ -414,9 +368,9 @@ $investments = $stmt->fetchAll();
 </section>
 
 <!-- Newsletter Section -->
-<section class="newsletter-section py-5">
+<section class="newsletter-section py-5" style="background: #7dcbb0;">
     <div class="container">
-        <div class="newsletter-container bg-primary text-white p-5 rounded shadow">
+        <div class="newsletter-container background: #7dcbb0; text-dark p-5 rounded shadow">
             <div class="row align-items-center">
                 <div class="col-lg-7 mb-4 mb-lg-0">
                     <h2 class="mb-3">Subscribe to Our Newsletter</h2>

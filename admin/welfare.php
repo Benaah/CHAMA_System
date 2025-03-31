@@ -31,7 +31,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'update_status' && isset($_GET[
 // Fetch welfare cases with filter
 $query = "
     SELECT w.*, u.name as requester_name, u.email as requester_email, u.phone as requester_phone,
-    (SELECT SUM(amount) FROM welfare_contributions WHERE case_id = w.id) as total_contributions
+    (SELECT SUM(amount) FROM welfare_contributions WHERE welfare_case_id = w.id) as total_contributions
     FROM welfare_cases w
     JOIN users u ON w.user_id = u.id
 ";
@@ -56,17 +56,30 @@ $stmt = $pdo->query("SELECT SUM(amount) as total FROM welfare_contributions");
 $total_welfare_fund = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
 // Get statistics
+// Instead of querying by status
+// $stmt = $pdo->query("SELECT w.status, COUNT(*) as count FROM welfare_cases w GROUP BY w.status");
+
+// Just get the total count
+$stmt = $pdo->query("SELECT COUNT(*) as total FROM welfare_cases");
+$total_cases = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+// Create a stats array with default values
 $stats = [
-    'total_cases' => 0,
+    'total_cases' => $total_cases,
     'pending' => 0,
     'approved' => 0,
-    'completed' => 0,
-    'rejected' => 0
+    'rejected' => 0,
+    'completed' => 0
 ];
 
-$stmt = $pdo->query("SELECT status, COUNT(*) as count FROM welfare_cases GROUP BY status");
-$status_counts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Skip the foreach loop that processes status counts
+// foreach ($status_counts as $count) {
+//     $stats[$count['status']] = $count['count'];
+// }
 
+$stmt = $pdo->query("SELECT COUNT(*) as total FROM welfare_cases");
+$total_cases = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+$status_counts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 foreach ($status_counts as $count) {
     $stats['total_cases'] += $count['count'];
     if (isset($stats[$count['status']])) {
@@ -77,7 +90,7 @@ foreach ($status_counts as $count) {
 
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Welfare Management</h1>
+        <h1 class="h3 mb-0 text-gray-800">            </h1>
         <div>
             <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addWelfareModal">
                 <i class="fas fa-plus fa-sm text-white-50"></i> Add New Case

@@ -11,53 +11,126 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Check if dividends table exists, if not create it
+try {
+    $stmt = $pdo->prepare("SELECT to_regclass('public.dividends')");
+    $stmt->execute();
+    $tableExists = $stmt->fetchColumn();
+    
+    if (!$tableExists) {
+        // Create dividends table
+        $sql = "CREATE TABLE dividends (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            amount DECIMAL(10, 2) NOT NULL,
+            description TEXT,
+            source_type VARCHAR(50),
+            source_id INTEGER,
+            distribution_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )";
+        $pdo->exec($sql);
+        
+        // Create index for faster queries
+        $pdo->exec("CREATE INDEX idx_dividends_user_id ON dividends(user_id)");
+        $pdo->exec("CREATE INDEX idx_dividends_date ON dividends(distribution_date)");
+    }
+} catch (PDOException $e) {
+    // Log the error but continue with default values
+    error_log("Error checking/creating dividends table: " . $e->getMessage());
+}
+
 // Initialize variables
 $dividends = [];
 $total_dividends = 0;
 $year_filter = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
 
-// Get available years for filtering
-$stmt = $pdo->prepare("
-    SELECT DISTINCT EXTRACT(YEAR FROM distribution_date) as year 
-    FROM dividends 
-    WHERE user_id = ? 
-    ORDER BY year DESC
-");
-$stmt->execute([$user_id]);
-$available_years = $stmt->fetchAll(PDO::FETCH_COLUMN);
+// Get available years for filtering - check if distribution_date column exists
+try {
+    // First check if the distribution_date column exists
+    $stmt = $pdo->prepare("
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'dividends' AND column_name = 'distribution_date'
+    ");
+    $stmt->execute();
+    $hasDistributionDate = $stmt->fetchColumn();
+    
+    if ($hasDistributionDate) {
+        // Use distribution_date column
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT EXTRACT(YEAR FROM distribution_date) as year 
+            FROM dividends 
+            WHERE user_id = ? 
+            ORDER BY year DESC
+        ");
+        $stmt->execute([$user_id]);
+    } else {
+        // Fall back to created_at column
+        $stmt = $pdo->prepare("
+            SELECT DISTINCT EXTRACT(YEAR FROM created_at) as year 
+            FROM dividends 
+            WHERE user_id = ? 
+            ORDER BY year DESC
+        ");
+        $stmt->execute([$user_id]);
+    }
+    
+    $available_years = $stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {
+    // If there's an error, just use current year
+    $available_years = [];
+    error_log("Error fetching dividend years: " . $e->getMessage());
+}
 
 // If no years found, add current year to the list
 if (empty($available_years)) {
     $available_years[] = date('Y');
 }
 
-// Fetch user's dividends with year filter
-$stmt = $pdo->prepare("
-    SELECT d.*, 
-           COALESCE(p.name, 'General Distribution') as source_name
-    FROM dividends d
-    LEFT JOIN projects p ON d.source_id = p.id AND d.source_type = 'project'
-    WHERE d.user_id = ? AND EXTRACT(YEAR FROM d.distribution_date) = ?
-    ORDER BY d.distribution_date DESC
-");
-$stmt->execute([$user_id, $year_filter]);
-$dividends = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Fetch user's dividends with year filter - adapt to available columns
+try {
+    // Check which date column to use
+    if ($hasDistributionDate) {
+        $dateColumn = 'distribution_date';
+    } else {
+        $dateColumn = 'created_at';
+    }
+    
+    $stmt = $pdo->prepare("
+        SELECT d.*, 
+               COALESCE(p.name, 'General Distribution') as source_name
+        FROM dividends d
+        LEFT JOIN projects p ON d.source_id = p.id AND d.source_type = 'project'
+        WHERE d.user_id = ? AND EXTRACT(YEAR FROM d.$dateColumn) = ?
+        ORDER BY d.$dateColumn DESC
+    ");
+    $stmt->execute([$user_id, $year_filter]);
+    $dividends = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Calculate total dividends for the selected year
-$stmt = $pdo->prepare("
-    SELECT SUM(amount) as total 
-    FROM dividends 
-    WHERE user_id = ? AND EXTRACT(YEAR FROM distribution_date) = ?
-");
-$stmt->execute([$user_id, $year_filter]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$total_dividends = $result['total'] ?? 0;
+    // Calculate total dividends for the selected year
+    $stmt = $pdo->prepare("
+        SELECT SUM(amount) as total 
+        FROM dividends 
+        WHERE user_id = ? AND EXTRACT(YEAR FROM $dateColumn) = ?
+    ");
+    $stmt->execute([$user_id, $year_filter]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $total_dividends = $result['total'] ?? 0;
 
-// Get all-time total dividends
-$stmt = $pdo->prepare("SELECT SUM(amount) as total FROM dividends WHERE user_id = ?");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$all_time_total = $result['total'] ?? 0;
+    // Get all-time total dividends
+    $stmt = $pdo->prepare("SELECT SUM(amount) as total FROM dividends WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $all_time_total = $result['total'] ?? 0;
+} catch (PDOException $e) {
+    // If there's an error, set empty values
+    $dividends = [];
+    $total_dividends = 0;
+    $all_time_total = 0;
+    error_log("Error fetching dividend data: " . $e->getMessage());
+}
 ?>
 
 <div class="container py-5 mt-4">
@@ -144,7 +217,7 @@ $all_time_total = $result['total'] ?? 0;
                                 <tbody>
                                     <?php foreach ($dividends as $dividend): ?>
                                         <tr>
-                                            <td><?= date('M d, Y', strtotime($dividend['distribution_date'])) ?></td>
+                                            <td><?= date('M d, Y', strtotime($dividend[$dateColumn])) ?></td>
                                             <td><?= htmlspecialchars($dividend['source_name']) ?></td>
                                             <td><?= htmlspecialchars($dividend['description']) ?></td>
                                             <td class="text-success font-weight-bold">
@@ -234,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
     $chart_data = array_reverse($dividends);
     foreach ($chart_data as $dividend): 
     ?>
-        dates.push('<?= date('M d', strtotime($dividend['distribution_date'])) ?>');
+        dates.push('<?= date('M d', strtotime($dividend[$dateColumn])) ?>');
         amounts.push(<?= $dividend['amount'] ?>);
         runningTotal += <?= $dividend['amount'] ?>;
         cumulativeAmounts.push(runningTotal);
@@ -273,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {
             maintainAspectRatio: false,
             responsive: true,
-            tooltips: {
+                tooltips: {
                 mode: 'index',
                 intersect: false,
                 callbacks: {
