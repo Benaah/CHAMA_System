@@ -11,6 +11,70 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Check if welfare_cases table exists, if not create it
+try {
+    $stmt = $pdo->prepare("SELECT to_regclass('public.welfare_cases')");
+    $stmt->execute();
+    $tableExists = $stmt->fetchColumn();
+    
+    if (!$tableExists) {
+        // Create welfare_cases table
+        $sql = "CREATE TABLE welfare_cases (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            amount_needed DECIMAL(10, 2) NOT NULL,
+            amount_raised DECIMAL(10, 2) DEFAULT 0,
+            beneficiary_id INTEGER REFERENCES users(id),
+            status VARCHAR(50) DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            deadline DATE NOT NULL
+        )";
+        $pdo->exec($sql);
+        
+        // Create welfare_contributions table
+        $sql = "CREATE TABLE welfare_contributions (
+            id SERIAL PRIMARY KEY,
+            welfare_id INTEGER NOT NULL REFERENCES welfare_cases(id),
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            amount DECIMAL(10, 2) NOT NULL,
+            anonymous BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )";
+        $pdo->exec($sql);
+        
+        // Create indexes for faster queries
+        $pdo->exec("CREATE INDEX idx_welfare_status ON welfare_cases(status)");
+        $pdo->exec("CREATE INDEX idx_welfare_beneficiary ON welfare_cases(beneficiary_id)");
+        $pdo->exec("CREATE INDEX idx_welfare_contributions_user ON welfare_contributions(user_id)");
+    }
+} catch (PDOException $e) {
+    // Log the error but continue
+    error_log("Error checking/creating welfare tables: " . $e->getMessage());
+}
+
+// Check if beneficiary_id column exists, if not add it
+try {
+    $stmt = $pdo->prepare("
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'welfare_cases' AND column_name = 'beneficiary_id'
+    ");
+    $stmt->execute();
+    $hasBeneficiaryId = $stmt->fetchColumn();
+    
+    if (!$hasBeneficiaryId) {
+        // Add beneficiary_id column
+        $pdo->exec("ALTER TABLE welfare_cases ADD COLUMN beneficiary_id INTEGER REFERENCES users(id)");
+        
+        // Set default beneficiary for existing cases
+        $pdo->exec("UPDATE welfare_cases SET beneficiary_id = (SELECT id FROM users LIMIT 1) WHERE beneficiary_id IS NULL");
+    }
+} catch (PDOException $e) {
+    // Log the error but continue
+    error_log("Error checking/adding beneficiary_id column: " . $e->getMessage());
+}
+
 // Initialize variables
 $welfare_cases = [];
 $my_contributions = [];
@@ -19,66 +83,90 @@ $total_received = 0;
 $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 
 // Fetch welfare cases with filter
-$query = "
-    SELECT w.id, w.title, w.description, w.amount_needed, w.amount_raised, 
-           w.status, w.created_at, w.deadline, w.beneficiary_id, 
-           u.name as beneficiary_name, u.profile_picture as beneficiary_picture
-    FROM welfare_cases w
-    JOIN users u ON w.beneficiary_id = u.id
-";
+try {
+    $query = "
+        SELECT w.id, w.title, w.description, w.amount_needed, w.amount_raised, 
+               w.status, w.created_at, w.deadline, w.beneficiary_id, 
+               u.name as beneficiary_name, u.profile_picture as beneficiary_picture
+        FROM welfare_cases w
+        JOIN users u ON w.beneficiary_id = u.id
+    ";
 
-if ($status_filter !== 'all') {
-    $query .= " WHERE w.status = :status";
+    if ($status_filter !== 'all') {
+        $query .= " WHERE w.status = :status";
+    }
+
+    $query .= " ORDER BY 
+        CASE 
+            WHEN w.status = 'active' THEN 1
+            WHEN w.status = 'pending' THEN 2
+            WHEN w.status = 'completed' THEN 3
+            ELSE 4
+        END, 
+        w.created_at DESC";
+
+    $stmt = $pdo->prepare($query);
+
+    if ($status_filter !== 'all') {
+        $stmt->bindParam(':status', $status_filter);
+    }
+
+    $stmt->execute();
+    $welfare_cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // If there's an error, set empty array
+    $welfare_cases = [];
+    error_log("Error fetching welfare cases: " . $e->getMessage());
 }
-
-$query .= " ORDER BY 
-    CASE 
-        WHEN w.status = 'active' THEN 1
-        WHEN w.status = 'pending' THEN 2
-        WHEN w.status = 'completed' THEN 3
-        ELSE 4
-    END, 
-    w.created_at DESC";
-
-$stmt = $pdo->prepare($query);
-
-if ($status_filter !== 'all') {
-    $stmt->bindParam(':status', $status_filter);
-}
-
-$stmt->execute();
-$welfare_cases = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch my contributions to welfare cases
-$stmt = $pdo->prepare("
-    SELECT wc.welfare_id, wc.amount, wc.created_at, w.title
-    FROM welfare_contributions wc
-    JOIN welfare_cases w ON wc.welfare_id = w.id
-    WHERE wc.user_id = ?
-    ORDER BY wc.created_at DESC
-");
-$stmt->execute([$user_id]);
-$my_contributions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare("
+        SELECT wc.welfare_id, wc.amount, wc.created_at, w.title
+        FROM welfare_contributions wc
+        JOIN welfare_cases w ON wc.welfare_id = w.id
+        WHERE wc.user_id = ?
+        ORDER BY wc.created_at DESC
+    ");
+    $stmt->execute([$user_id]);
+    $my_contributions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // If there's an error, set empty array
+    $my_contributions = [];
+    error_log("Error fetching user contributions: " . $e->getMessage());
+}
 
 // Calculate total contributed
-$stmt = $pdo->prepare("
-    SELECT SUM(amount) as total
-    FROM welfare_contributions
-    WHERE user_id = ?
-");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$total_contributed = $result['total'] ?? 0;
+try {
+    $stmt = $pdo->prepare("
+        SELECT SUM(amount) as total
+        FROM welfare_contributions
+        WHERE user_id = ?
+    ");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $total_contributed = $result['total'] ?? 0;
+} catch (PDOException $e) {
+    // If there's an error, set to 0
+    $total_contributed = 0;
+    error_log("Error calculating total contributed: " . $e->getMessage());
+}
 
 // Calculate total received (if user has been a beneficiary)
-$stmt = $pdo->prepare("
-    SELECT SUM(amount_raised) as total
-    FROM welfare_cases
-    WHERE beneficiary_id = ? AND status = 'completed'
-");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$total_received = $result['total'] ?? 0;
+try {
+    $stmt = $pdo->prepare("
+        SELECT SUM(amount_raised) as total
+        FROM welfare_cases
+        WHERE beneficiary_id = ? AND status = 'completed'
+    ");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $total_received = $result['total'] ?? 0;
+} catch (PDOException $e) {
+    // If there's an error, set to 0
+    $total_received = 0;
+    error_log("Error calculating total received: " . $e->getMessage());
+}
 
 // Handle welfare contribution form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['contribute'])) {
@@ -158,6 +246,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_case'])) {
             $_SESSION['error'] = "Error submitting welfare case: " . $e->getMessage();
         }
     }
+}
+
+// Display error or success messages
+if (isset($_SESSION['error'])) {
+    echo '<div class="alert alert-danger">' . htmlspecialchars($_SESSION['error']) . '</div>';
+    unset($_SESSION['error']);
+} elseif (isset($_SESSION['success'])) {
+    echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['success']) . '</div>';
+    unset($_SESSION['success']);
 }
 ?>
 

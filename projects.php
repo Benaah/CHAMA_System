@@ -11,6 +11,88 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Check if projects table exists, if not create it
+try {
+    $stmt = $pdo->prepare("SELECT to_regclass('public.projects')");
+    $stmt->execute();
+    $tableExists = $stmt->fetchColumn();
+    
+    if (!$tableExists) {
+        // Create projects table
+        $sql = "CREATE TABLE projects (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            category VARCHAR(100),
+            target_amount DECIMAL(12, 2) NOT NULL,
+            current_investment DECIMAL(12, 2) DEFAULT 0,
+            expected_return DECIMAL(5, 2) NOT NULL,
+            duration_months INTEGER NOT NULL,
+            start_date DATE NOT NULL,
+            end_date DATE,
+            status VARCHAR(50) DEFAULT 'planning',
+            image_path VARCHAR(255),
+            proposer_id INTEGER REFERENCES users(id),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )";
+        $pdo->exec($sql);
+        
+        // Create project_investments table
+        $sql = "CREATE TABLE project_investments (
+            id SERIAL PRIMARY KEY,
+            project_id INTEGER NOT NULL REFERENCES projects(id),
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            amount DECIMAL(12, 2) NOT NULL,
+            investment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(project_id, user_id, investment_date)
+        )";
+        $pdo->exec($sql);
+        
+        // Create project_returns table
+        $sql = "CREATE TABLE project_returns (
+            id SERIAL PRIMARY KEY,
+            project_id INTEGER NOT NULL REFERENCES projects(id),
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            amount DECIMAL(12, 2) NOT NULL,
+            return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            description TEXT
+        )";
+        $pdo->exec($sql);
+        
+        // Create indexes for faster queries
+        $pdo->exec("CREATE INDEX idx_projects_status ON projects(status)");
+        $pdo->exec("CREATE INDEX idx_projects_category ON projects(category)");
+        $pdo->exec("CREATE INDEX idx_project_investments_user ON project_investments(user_id)");
+        $pdo->exec("CREATE INDEX idx_project_investments_project ON project_investments(project_id)");
+    }
+} catch (PDOException $e) {
+    // Log the error but continue
+    error_log("Error checking/creating projects tables: " . $e->getMessage());
+}
+
+// Check if category column exists, if not add it
+try {
+    $stmt = $pdo->prepare("
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'projects' AND column_name = 'category'
+    ");
+    $stmt->execute();
+    $hasCategory = $stmt->fetchColumn();
+    
+    if (!$hasCategory) {
+        // Add category column
+        $pdo->exec("ALTER TABLE projects ADD COLUMN category VARCHAR(100)");
+        
+        // Set default categories for existing projects
+        $pdo->exec("UPDATE projects SET category = 'General' WHERE category IS NULL");
+    }
+} catch (PDOException $e) {
+    // Log the error but continue
+    error_log("Error checking/adding category column: " . $e->getMessage());
+}
+
 // Initialize variables
 $projects = [];
 $my_investments = [];
@@ -20,79 +102,114 @@ $status_filter = isset($_GET['status']) ? $_GET['status'] : 'all';
 $category_filter = isset($_GET['category']) ? $_GET['category'] : 'all';
 
 // Fetch all project categories
-$stmt = $pdo->prepare("SELECT DISTINCT category FROM projects ORDER BY category");
-$stmt->execute();
-$categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
+try {
+    $stmt = $pdo->prepare("SELECT DISTINCT category FROM projects WHERE category IS NOT NULL ORDER BY category");
+    $stmt->execute();
+    $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    // If no categories found, provide default ones
+    if (empty($categories)) {
+        $categories = ['Agriculture', 'Real Estate', 'Technology', 'Education', 'Healthcare', 'Retail', 'Manufacturing', 'Services', 'Other'];
+    }
+} catch (PDOException $e) {
+    // Default categories if query fails
+    $categories = ['Agriculture', 'Real Estate', 'Technology', 'Education', 'Healthcare', 'Retail', 'Manufacturing', 'Services', 'Other'];
+    error_log("Error fetching project categories: " . $e->getMessage());
+}
 
 // Fetch projects with filters
-$query = "
-    SELECT p.*, 
-           COALESCE(SUM(pi.amount), 0) as total_invested,
-           COUNT(DISTINCT pi.user_id) as investor_count
-    FROM projects p
-    LEFT JOIN project_investments pi ON p.id = pi.project_id
-";
+try {
+    $query = "
+        SELECT p.*, 
+               COALESCE(SUM(pi.amount), 0) as total_invested,
+               COUNT(DISTINCT pi.user_id) as investor_count
+        FROM projects p
+        LEFT JOIN project_investments pi ON p.id = pi.project_id
+    ";
 
-$where_clauses = [];
-$params = [];
+    $where_clauses = [];
+    $params = [];
 
-if ($status_filter !== 'all') {
-    $where_clauses[] = "p.status = ?";
-    $params[] = $status_filter;
+    if ($status_filter !== 'all') {
+        $where_clauses[] = "p.status = ?";
+        $params[] = $status_filter;
+    }
+
+    if ($category_filter !== 'all') {
+        $where_clauses[] = "p.category = ?";
+        $params[] = $category_filter;
+    }
+
+    if (!empty($where_clauses)) {
+        $query .= " WHERE " . implode(" AND ", $where_clauses);
+    }
+
+    $query .= " GROUP BY p.id ORDER BY 
+        CASE 
+            WHEN p.status = 'active' THEN 1
+            WHEN p.status = 'planning' THEN 2
+            WHEN p.status = 'completed' THEN 3
+            ELSE 4
+        END, 
+        p.start_date DESC";
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
+    $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // If there's an error, set empty array
+    $projects = [];
+    error_log("Error fetching projects: " . $e->getMessage());
 }
-
-if ($category_filter !== 'all') {
-    $where_clauses[] = "p.category = ?";
-    $params[] = $category_filter;
-}
-
-if (!empty($where_clauses)) {
-    $query .= " WHERE " . implode(" AND ", $where_clauses);
-}
-
-$query .= " GROUP BY p.id ORDER BY 
-    CASE 
-        WHEN p.status = 'active' THEN 1
-        WHEN p.status = 'planning' THEN 2
-        WHEN p.status = 'completed' THEN 3
-        ELSE 4
-    END, 
-    p.start_date DESC";
-
-$stmt = $pdo->prepare($query);
-$stmt->execute($params);
-$projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch user's investments
-$stmt = $pdo->prepare("
-    SELECT pi.*, p.name as project_name, p.status as project_status
-    FROM project_investments pi
-    JOIN projects p ON pi.project_id = p.id
-    WHERE pi.user_id = ?
-    ORDER BY pi.investment_date DESC
-");
-$stmt->execute([$user_id]);
-$my_investments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare("
+        SELECT pi.*, p.name as project_name, p.status as project_status
+        FROM project_investments pi
+        JOIN projects p ON pi.project_id = p.id
+        WHERE pi.user_id = ?
+        ORDER BY pi.investment_date DESC
+    ");
+    $stmt->execute([$user_id]);
+    $my_investments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // If there's an error, set empty array
+    $my_investments = [];
+    error_log("Error fetching user investments: " . $e->getMessage());
+}
 
 // Calculate total invested
-$stmt = $pdo->prepare("
-    SELECT SUM(amount) as total
-    FROM project_investments
-    WHERE user_id = ?
-");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$total_invested = $result['total'] ?? 0;
+try {
+    $stmt = $pdo->prepare("
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM project_investments
+        WHERE user_id = ?
+    ");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $total_invested = $result['total'] ?? 0;
+} catch (PDOException $e) {
+    // If there's an error, set to 0
+    $total_invested = 0;
+    error_log("Error calculating total invested: " . $e->getMessage());
+}
 
 // Calculate total returns
-$stmt = $pdo->prepare("
-    SELECT SUM(amount) as total
-    FROM project_returns
-    WHERE user_id = ?
-");
-$stmt->execute([$user_id]);
-$result = $stmt->fetch(PDO::FETCH_ASSOC);
-$total_returns = $result['total'] ?? 0;
+try {
+    $stmt = $pdo->prepare("
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM project_returns
+        WHERE user_id = ?
+    ");
+    $stmt->execute([$user_id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $total_returns = $result['total'] ?? 0;
+} catch (PDOException $e) {
+    // If there's an error, set to 0
+    $total_returns = 0;
+    error_log("Error calculating total returns: " . $e->getMessage());
+}
 
 // Handle project investment form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['invest'])) {
@@ -138,7 +255,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['invest'])) {
     }
 }
 
-// Handle project proposal form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_proposal'])) {
     $name = trim($_POST['name']);
     $description = trim($_POST['description']);
@@ -198,6 +314,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_proposal'])) {
     }
 }
 ?>
+
+<!-- Rest of the HTML code remains the same -->
 
 <div class="container py-5 mt-4">
     <div class="row mb-4">

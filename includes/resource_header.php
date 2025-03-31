@@ -22,7 +22,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: linear-gradient(135deg, #4b421b 0%, #24252a 51%, #070716 100%)">
         <div class="container">
             <a class="navbar-brand" href="<?php echo str_contains($current_page, '/') ? '../' : ''; ?>../index.php">
                 <i class="fas fa-users mr-2"></i> AGAPE YOUTH GROUP

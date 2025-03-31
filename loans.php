@@ -3,21 +3,121 @@ require_once 'config.php';
 require_once 'includes/functions.php';
 require_once 'auth.php'; // Require authentication
 
+// Check if loans table exists, if not create it
+try {
+    $stmt = $pdo->prepare("SELECT to_regclass('public.loans')");
+    $stmt->execute();
+    $tableExists = $stmt->fetchColumn();
+    
+    if (!$tableExists) {
+        // Create loans table
+        $sql = "CREATE TABLE loans (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            amount DECIMAL(10, 2) NOT NULL,
+            interest_rate DECIMAL(5, 2) NOT NULL DEFAULT 10.00,
+            duration INTEGER NOT NULL DEFAULT 12,
+            purpose TEXT,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            amount_repaid DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+            application_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            approval_date TIMESTAMP,
+            loan_date TIMESTAMP,
+            due_date TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )";
+        $pdo->exec($sql);
+        
+        // Create loan_repayments table
+        $sql = "CREATE TABLE loan_repayments (
+            id SERIAL PRIMARY KEY,
+            loan_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            amount DECIMAL(10, 2) NOT NULL,
+            payment_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            payment_method VARCHAR(50),
+            reference_number VARCHAR(100),
+            notes TEXT,
+            FOREIGN KEY (loan_id) REFERENCES loans(id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )";
+        $pdo->exec($sql);
+        
+        // Create indexes for faster queries
+        $pdo->exec("CREATE INDEX idx_loans_user_id ON loans(user_id)");
+        $pdo->exec("CREATE INDEX idx_loans_status ON loans(status)");
+        $pdo->exec("CREATE INDEX idx_loan_repayments_loan_id ON loan_repayments(loan_id)");
+    }
+} catch (PDOException $e) {
+    // Log the error but continue
+    error_log("Error checking/creating loans tables: " . $e->getMessage());
+}
+
+// Check if application_date column exists, if not use created_at or add it
+try {
+    $stmt = $pdo->prepare("
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'loans' AND column_name = 'application_date'
+    ");
+    $stmt->execute();
+    $hasApplicationDate = $stmt->fetchColumn();
+    
+    if (!$hasApplicationDate) {
+        // Check if created_at exists
+        $stmt = $pdo->prepare("
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'loans' AND column_name = 'created_at'
+        ");
+        $stmt->execute();
+        $hasCreatedAt = $stmt->fetchColumn();
+        
+        if ($hasCreatedAt) {
+            // Use created_at instead of application_date
+            $applicationDateColumn = 'created_at';
+        } else {
+            // Add application_date column
+            $pdo->exec("ALTER TABLE loans ADD COLUMN application_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
+            $applicationDateColumn = 'application_date';
+        }
+    } else {
+        $applicationDateColumn = 'application_date';
+    }
+} catch (PDOException $e) {
+    // Default to application_date and handle errors in queries
+    $applicationDateColumn = 'application_date';
+    error_log("Error checking loan table columns: " . $e->getMessage());
+}
+
 // Pagination
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $records_per_page = 10;
 $offset = ($page - 1) * $records_per_page;
 
 // Get user's loans with pagination
-$stmt = $pdo->prepare("SELECT * FROM loans WHERE user_id = ? ORDER BY application_date DESC LIMIT ? OFFSET ?");
-$stmt->execute([$_SESSION['user_id'], $records_per_page, $offset]);
-$loans = $stmt->fetchAll();
+try {
+    $stmt = $pdo->prepare("SELECT * FROM loans WHERE user_id = ? ORDER BY $applicationDateColumn DESC LIMIT ? OFFSET ?");
+    $stmt->execute([$_SESSION['user_id'], $records_per_page, $offset]);
+    $loans = $stmt->fetchAll();
+} catch (PDOException $e) {
+    // If there's an error, set empty array
+    $loans = [];
+    error_log("Error fetching loans: " . $e->getMessage());
+}
 
 // Get total number of loans for pagination
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM loans WHERE user_id = ?");
-$stmt->execute([$_SESSION['user_id']]);
-$total_records = $stmt->fetchColumn();
-$total_pages = ceil($total_records / $records_per_page);
+try {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM loans WHERE user_id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $total_records = $stmt->fetchColumn();
+    $total_pages = ceil($total_records / $records_per_page);
+} catch (PDOException $e) {
+    // If there's an error, set default values
+    $total_records = 0;
+    $total_pages = 1;
+    error_log("Error counting loans: " . $e->getMessage());
+}
 
 // Get user's total contributions for loan eligibility
 $totalContributions = getUserTotalContributions($_SESSION['user_id']);
@@ -92,8 +192,8 @@ include 'includes/header.php';
                     <div class="alert alert-info mb-4">
                         <h5><i class="fas fa-info-circle"></i> Loan Guidelines</h5>
                         <ul>
-                            <li>Loan eligibility is <?php echo MAX_LOAN_MULTIPLIER; ?>x your total contributions</li>
-                            <li>Current interest rate is <?php echo LOAN_INTEREST_RATE; ?>% per annum</li>
+                            <li>Loan eligibility is <?php echo defined('MAX_LOAN_MULTIPLIER') ? MAX_LOAN_MULTIPLIER : 3; ?>x your total contributions</li>
+                            <li>Current interest rate is <?php echo defined('LOAN_INTEREST_RATE') ? LOAN_INTEREST_RATE : 10; ?>% per annum</li>
                             <li>Maximum loan repayment period is 12 months</li>
                             <li>Early repayment is allowed without penalties</li>
                         </ul>
@@ -118,12 +218,12 @@ include 'includes/header.php';
                                 <tbody>
                                     <?php foreach ($loans as $loan): ?>
                                         <tr>
-                                            <td><?php echo formatDate($loan['application_date']); ?></td>
+                                            <td><?php echo formatDate($loan[$applicationDateColumn] ?? date('Y-m-d H:i:s')); ?></td>
                                             <td><?php echo formatCurrency($loan['amount']); ?></td>
                                             <td><?php echo $loan['interest_rate']; ?>%</td>
                                             <td><?php echo $loan['duration']; ?> months</td>
-                                            <td><?php echo formatCurrency($loan['amount_repaid']); ?></td>
-                                            <td><?php echo formatCurrency($loan['amount'] - $loan['amount_repaid']); ?></td>
+                                            <td><?php echo formatCurrency($loan['amount_repaid'] ?? 0); ?></td>
+                                            <td><?php echo formatCurrency($loan['amount'] - ($loan['amount_repaid'] ?? 0)); ?></td>
                                             <td>
                                                 <?php 
                                                     $statusInfo = getLoanStatusLabel($loan['status']);
@@ -136,7 +236,7 @@ include 'includes/header.php';
                                                 <a href="loan_details.php?id=<?php echo $loan['id']; ?>" class="btn btn-sm btn-info">
                                                     <i class="fas fa-eye"></i> View
                                                 </a>
-                                                <?php if ($loan['status'] == 'disbursed' && ($loan['amount'] - $loan['amount_repaid']) > 0): ?>
+                                                <?php if ($loan['status'] == 'disbursed' && ($loan['amount'] - ($loan['amount_repaid'] ?? 0)) > 0): ?>
                                                     <a href="loan_repayment.php?id=<?php echo $loan['id']; ?>" class="btn btn-sm btn-success">
                                                         <i class="fas fa-money-bill-wave"></i> Repay
                                                     </a>

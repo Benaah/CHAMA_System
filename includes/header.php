@@ -178,24 +178,26 @@ if (in_array($current_page, $restricted_pages) && !isset($_SESSION['user_id'])) 
                                 </a>
                             </div>
                         </li>
-                        
-                        <!-- Group Activities Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['meetings.php', 'meeting_details.php', 'projects.php', 'welfare.php'])) ? 'active-nav-item' : ''; ?>" href="#" id="activitiesDropdown" role="button" data-toggle="dropdown">
-                                <i class="fas fa-users"></i> Group Activities
-                            </a>
-                            <div class="dropdown-menu" aria-labelledby="activitiesDropdown">
-                                <a class="dropdown-item <?php echo ($current_page == 'meetings.php' || $current_page == 'meeting_details.php') ? 'active' : ''; ?>" href="meetings.php">
-                                    <i class="fas fa-calendar-alt"></i> Meetings
-                                </a>
-                                <a class="dropdown-item <?php echo ($current_page == 'projects.php') ? 'active' : ''; ?>" href="projects.php">
-                                    <i class="fas fa-project-diagram"></i> Projects
-                                </a>
-                                <a class="dropdown-item <?php echo ($current_page == 'welfare.php') ? 'active' : ''; ?>" href="welfare.php">
-                                    <i class="fas fa-hands-helping"></i> Welfare
-                                </a>
-                            </div>
-                        </li>
+                                                  <!-- Group Activities Dropdown -->
+                                                  <li class="nav-item dropdown">
+                                                      <a class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['meetings.php', 'meeting_details.php', 'projects.php', 'welfare.php', 'merry_go_round.php'])) ? 'active-nav-item' : ''; ?>" href="#" id="activitiesDropdown" role="button" data-toggle="dropdown">
+                                                          <i class="fas fa-users"></i> Group Activities
+                                                      </a>
+                                                      <div class="dropdown-menu" aria-labelledby="activitiesDropdown">
+                                                          <a class="dropdown-item <?php echo ($current_page == 'meetings.php' || $current_page == 'meeting_details.php') ? 'active' : ''; ?>" href="meetings.php">
+                                                              <i class="fas fa-calendar-alt"></i> Meetings
+                                                          </a>
+                                                          <a class="dropdown-item <?php echo ($current_page == 'projects.php') ? 'active' : ''; ?>" href="projects.php">
+                                                              <i class="fas fa-project-diagram"></i> Projects
+                                                          </a>
+                                                          <a class="dropdown-item <?php echo ($current_page == 'welfare.php') ? 'active' : ''; ?>" href="welfare.php">
+                                                              <i class="fas fa-hands-helping"></i> Welfare
+                                                          </a>
+                                                          <a class="dropdown-item <?php echo ($current_page == 'merry_go_round.php') ? 'active' : ''; ?>" href="merry_go_round.php">
+                                                              <i class="fas fa-sync"></i> Merry Go Round
+                                                          </a>
+                                                      </div>
+                                                  </li>
                         
                         <!-- Resources Dropdown -->
                         <li class="nav-item dropdown">
